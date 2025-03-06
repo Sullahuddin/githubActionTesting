@@ -1,0 +1,31 @@
+name: Enforce Commit Message Format
+
+on:
+  pull_request:
+    branches:
+      - main  # Runs when a PR is made to 'main'
+    types:
+      - opened
+      - synchronize  # Trigger when commits are added to the PR
+
+jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Last Commit Message
+        id: commit_message
+        run: |
+          MESSAGE=$(git log --format=%B -n 1 HEAD)
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+          echo "Last Commit Message: $MESSAGE"
+
+      - name: Validate Commit Message
+        run: |
+          if [[ ! "${{ env.MESSAGE }}" =~ ^(feat:|feature:|BREAKING CHANGE) ]]; then
+            echo "❌ Commit message must start with 'feat:', 'feature:', or contain 'BREAKING CHANGE'."
+            exit 1  # Fail the workflow
+          else
+            echo "✅ Commit message is valid."
