@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+            fetch-depth: 2  # Fetch at least two commits
 
       - name: Set Up Git User
         run: |
@@ -24,8 +26,13 @@ jobs:
       - name: Get Latest Commit Message
         id: commit_message
         run: |
-          # Get the last commit before the merge commit
-          MESSAGE=$(git log --format=%B -n 1 $(git rev-parse HEAD~1))
+          # Ensure we have a previous commit before accessing HEAD~1
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            MESSAGE=$(git log --format=%B -n 1 HEAD~1)
+          else
+            MESSAGE=$(git log --format=%B -n 1 HEAD)  # Fallback to HEAD if HEAD~1 is missing
+          fi
+
           MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g' | sed 's/:/-/g')
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
 
