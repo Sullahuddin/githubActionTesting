@@ -23,7 +23,9 @@ jobs:
 
       - name: Get Latest Commit Message
         id: commit_message
-        run: echo "MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+        run: |
+            MESSAGE=$(git log -1 --pretty=%B | tr '\n' ' ' | sed 's/"/\\"/g' | sed 's/:/-/g')
+            echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
 
       - name: Read Current Version (Fallback to v0.0.0)
         id: current_version
