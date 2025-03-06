@@ -29,7 +29,7 @@ jobs:
           git fetch --unshallow || true  # Ensure full history is available
           MERGED_BRANCH=$(git log --merges --format="%P" -n 1 | awk '{print $2}')  # Get the merged branch's last commit
           MESSAGE=$(git log --format=%B -n 1 $MERGED_BRANCH)  # Fetch last commit message from that branch
-          MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g' | sed 's/:/-/g')  # Sanitize for GitHub Actions
+          MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g')  # Sanitize for GitHub Actions
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
 
       - name: Read Current Version (Fallback to v0.0.0)
