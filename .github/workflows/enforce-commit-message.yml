@@ -26,8 +26,8 @@ jobs:
 
       - name: Validate Commit Message
         run: |
-          if [[ ! "${{ env.MESSAGE }}" =~ ^(feat:|feature:|BREAKING CHANGE) ]]; then
-            echo "❌ Commit message must start with 'feat:', 'feature:', or contain 'BREAKING CHANGE'."
+          if [[ ! "${{ env.MESSAGE }}" =~ ^(fix:|feat:|BREAKING CHANGE) ]]; then
+            echo "❌ Commit message must start with 'fix:', 'feat:', or contain 'BREAKING CHANGE'."
             exit 1  # Fail the workflow
           else
             echo "✅ Commit message is valid."
