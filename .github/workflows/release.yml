@@ -3,14 +3,15 @@ name: Auto Versioning & Release
 on:
   push:
     branches:
-      - main
+      - main  # Runs when a PR is merged into main
 
 permissions:
-        contents: write  # ✅ Gives permission to push changes
-    
+  contents: write  # ✅ Required to push changes
+
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -20,29 +21,56 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Read Current Version
-        id: current_version
-        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - name: Get Latest Commit Message
+        id: commit_message
+        run: echo "MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
 
-      - name: Increment Patch Version
-        id: increment_version
+      - name: Read Current Version (Fallback to v0.0.0)
+        id: current_version
         run: |
-          VERSION=$(cat version.txt)
+          if [ -f version.txt ]; then
+            VERSION=$(cat version.txt)
+          else
+            VERSION="0.0.0"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Current Version: $VERSION"
+
+      - name: Determine Next Version (Semantic Versioning)
+        id: versioning
+        run: |
+          VERSION=${{ env.VERSION }}
           IFS='.' read -r major minor patch <<< "$VERSION"
-          NEW_VERSION="$major.$minor.$((patch + 1))"
+
+          # Determine version bump
+          if [[ "${{ env.MESSAGE }}" == *"BREAKING CHANGE"* || "${{ env.MESSAGE }}" == *"!:"* ]]; then
+            major=$((major + 1))
+            minor=0
+            patch=0
+          elif [[ "${{ env.MESSAGE }}" == "feat:"* ]]; then
+            minor=$((minor + 1))
+            patch=0
+          elif [[ "${{ env.MESSAGE }}" == "fix:"* ]]; then
+            patch=$((patch + 1))
+          else
+            patch=$((patch + 1))
+          fi
+
+          NEW_VERSION="$major.$minor.$patch"
           echo "$NEW_VERSION" > version.txt
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Next Version: $NEW_VERSION"
 
       - name: Commit and Push New Version
         run: |
           git add version.txt
-          git commit -m "Bump version to $NEW_VERSION"
+          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
           git push origin main
 
       - name: Create Git Tag
         run: |
-          git tag "v$NEW_VERSION"
-          git push origin "v$NEW_VERSION"
+          git tag "v${{ env.NEW_VERSION }}"
+          git push origin "v${{ env.NEW_VERSION }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
