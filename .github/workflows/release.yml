@@ -26,15 +26,17 @@ jobs:
       - name: Get Latest Commit Message
         id: commit_message
         run: |
-          # Ensure we have a previous commit before accessing HEAD~1
-          if git rev-parse HEAD~1 >/dev/null 2>&1; then
-            MESSAGE=$(git log --format=%B -n 1 HEAD~1)
-          else
-            MESSAGE=$(git log --format=%B -n 1 HEAD)  # Fallback to HEAD if HEAD~1 is missing
-          fi
+          # Ensure we fetch full commit history
+          git fetch --unshallow || true
 
+          # Get the last commit *before* the merge commit
+          MESSAGE=$(git log --format=%B -n 1 $(git rev-parse HEAD~1))
+
+          # Clean the commit message (remove newlines, escape characters)
           MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g' | sed 's/:/-/g')
+
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+
 
       - name: Read Current Version (Fallback to v0.0.0)
         id: current_version
