@@ -23,20 +23,14 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Get Latest Commit Message
+      - name: Get Last Commit from Merged Branch
         id: commit_message
         run: |
-          # Ensure we fetch full commit history
-          git fetch --unshallow || true
-
-          # Get the last commit *before* the merge commit
-          MESSAGE=$(git log --format=%B -n 1 $(git rev-parse HEAD~2))
-
-          # Clean the commit message (remove newlines, escape characters)
-          MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g' | sed 's/:/-/g')
-
+          git fetch --unshallow || true  # Ensure full history is available
+          MERGED_BRANCH=$(git log --merges --format="%P" -n 1 | awk '{print $2}')  # Get the merged branch's last commit
+          MESSAGE=$(git log --format=%B -n 1 $MERGED_BRANCH)  # Fetch last commit message from that branch
+          MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g' | sed 's/:/-/g')  # Sanitize for GitHub Actions
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
-
 
       - name: Read Current Version (Fallback to v0.0.0)
         id: current_version
