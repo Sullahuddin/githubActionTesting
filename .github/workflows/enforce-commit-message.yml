@@ -1,0 +1,34 @@
+name: Enforce Commit Message Format
+
+on:
+  pull_request:
+    branches:
+      - main  # Runs when a PR is made to 'main'
+    types:
+      - opened
+      - synchronize  # Trigger when commits are added to the PR
+
+jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Last Commit from Merged Branch
+        id: commit_message
+        run: |
+          git fetch --unshallow || true  # Ensure full history is available
+          MERGED_BRANCH=$(git log --merges --format="%P" -n 1 | awk '{print $2}')  # Get the merged branch's last commit
+          MESSAGE=$(git log --format=%B -n 1 $MERGED_BRANCH)  # Fetch last commit message from that branch
+          MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g')  # Sanitize for GitHub Actions
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+
+      - name: Validate Commit Message
+        run: |
+          if [[ ! "${{ env.MESSAGE }}" =~ ^(fix:|feat:|BREAKING CHANGE) ]]; then
+            echo "❌ Commit message must start with 'fix:', 'feat:', or contain 'BREAKING CHANGE'."
+            exit 1  # Fail the workflow
+          else
+            echo "✅ Commit message is valid."
+          fi # Closing the if statement properly
