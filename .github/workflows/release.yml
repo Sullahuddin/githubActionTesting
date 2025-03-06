@@ -38,30 +38,30 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Current Version: $VERSION"
 
-      - name: Determine Next Version (Semantic Versioning)
-        id: versioning
-        run: |
-          VERSION=${{ env.VERSION }}
-          IFS='.' read -r major minor patch <<< "$VERSION"
-
-          # Determine version bump
-          if [[ "${{ env.MESSAGE }}" == *"BREAKING CHANGE"* || "${{ env.MESSAGE }}" == *"!:"* ]]; then
-            major=$((major + 1))
-            minor=0
-            patch=0
-          elif [[ "${{ env.MESSAGE }}" == "feat:"* ]]; then
-            minor=$((minor + 1))
-            patch=0
-          elif [[ "${{ env.MESSAGE }}" == "fix:"* ]]; then
-            patch=$((patch + 1))
-          else
-            patch=$((patch + 1))
-          fi
-
-          NEW_VERSION="$major.$minor.$patch"
-          echo "$NEW_VERSION" > version.txt
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          echo "Next Version: $NEW_VERSION"
+          - name: Determine Next Version (Semantic Versioning)
+          id: versioning
+          run: |
+            VERSION=${{ env.VERSION }}
+            IFS='.' read -r major minor patch <<< "$VERSION"
+        
+            # Determine version bump
+            if [[ "${{ env.MESSAGE }}" =~ "BREAKING CHANGE" || "${{ env.MESSAGE }}" =~ "!:" ]]; then
+              major=$((major + 1))
+              minor=0
+              patch=0
+            elif [[ "${{ env.MESSAGE }}" =~ ^feat: ]]; then
+              minor=$((minor + 1))
+              patch=0
+            elif [[ "${{ env.MESSAGE }}" =~ ^fix: ]]; then
+              patch=$((patch + 1))
+            else
+              patch=$((patch + 1))
+            fi
+        
+            NEW_VERSION="$major.$minor.$patch"
+            echo "$NEW_VERSION" > version.txt
+            echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+            echo "Next Version: $NEW_VERSION"        
 
       - name: Commit and Push New Version
         run: |
