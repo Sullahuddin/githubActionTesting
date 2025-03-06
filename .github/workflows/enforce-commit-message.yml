@@ -15,12 +15,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Get Last Commit Message
+      - name: Get Last Commit from Merged Branch
         id: commit_message
         run: |
-          MESSAGE=$(git log --format=%B -n 1 HEAD)
+          git fetch --unshallow || true  # Ensure full history is available
+          MERGED_BRANCH=$(git log --merges --format="%P" -n 1 | awk '{print $2}')  # Get the merged branch's last commit
+          MESSAGE=$(git log --format=%B -n 1 $MERGED_BRANCH)  # Fetch last commit message from that branch
+          MESSAGE=$(echo "$MESSAGE" | tr '\n' ' ' | sed 's/"/\\"/g')  # Sanitize for GitHub Actions
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
-          echo "Last Commit Message: $MESSAGE"
 
       - name: Validate Commit Message
         run: |
